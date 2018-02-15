@@ -20,7 +20,9 @@ local boardWidth = 6
 local boardHeight = 12
 
 ---display variables
-local boardOffset = {["x"] = 1, ["y"] = 1}
+local tempOffX, tempOffY = term.getSize()
+local boardOffset = {(tempOffX/2-4)-boardWidth, (tempOffY/2-2)-boardHeight}
+tempOffX = nil  tempOffY = nil
 
 ---dropper variables and functions
 local puyoDropper = {["x"] = 3, ["y"] = 1, ["rotation"] = 2}
@@ -226,7 +228,7 @@ local function renderBoard()
                     paintutils.drawPixel(x+boardOffset.x,y+boardOffset.y,info.color)
                     --drawStringAt(x+boardOffset.x,y+boardOffset.y,"o",info.color,colors.black)
                 else
-                    drawStringAt(x+boardOffset.x,y+boardOffset.y,info.symbol,colors.lightGray,colors.gray)
+                    drawStringAt(x+boardOffset.x,y+boardOffset.y,info.symbol,colors.lightGray,colors.black)
                 end
             end
         end

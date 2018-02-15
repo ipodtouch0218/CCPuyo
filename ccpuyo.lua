@@ -369,7 +369,7 @@ local function thrd_playGame()
     sleep(0.05)
 end
 
---[[  
+
 --singleplayer
 term.clear()
 renderBoard()
@@ -377,8 +377,9 @@ resetDropper()
 puyoDropper.disabled = false
 while true do
     parallel.waitForAny(thrd_checkForKeys, thrd_playGame)
-end]]-
+end
 
+--[[
 --multiplayer
 term.clear()
 renderBoard()
@@ -389,3 +390,4 @@ end
 clientID = rednet.lookup("puyo-puyo","puyogame")
 if (clientID == nil) then --todo: hosting shiz
     rednet.host("puyo-puyo", "puyogame")
+]]

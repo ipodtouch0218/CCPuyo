@@ -84,7 +84,7 @@ local function dropperRotateRight(dropper)
     end
 end
 local function dropperQuickDrop(dropper)
-    dropperTimer = 15
+    dropperTimer = 1
 end
 
 puyoDropper.controls = {[keys.right] = dropperMoveRight, 

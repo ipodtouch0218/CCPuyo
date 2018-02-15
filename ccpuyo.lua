@@ -21,7 +21,7 @@ local boardHeight = 12
 
 ---display variables
 local tempOffX, tempOffY = term.getSize()
-local boardOffset = {(tempOffX/2-4)-boardWidth, (tempOffY/2-2)-boardHeight}
+local boardOffset = {["x"] = (tempOffX/2-4)-boardWidth, ["y"] = (tempOffY/2-2)-boardHeight}
 tempOffX = nil  tempOffY = nil
 
 ---dropper variables and functions

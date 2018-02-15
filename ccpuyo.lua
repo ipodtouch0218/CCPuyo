@@ -21,7 +21,7 @@ local boardHeight = 12
 
 ---display variables
 local tempOffX, tempOffY = term.getSize()
-local boardOffset = {["x"] = (tempOffX/2-4)-boardWidth, ["y"] = (tempOffY/2-2)-boardHeight}
+local boardOffset = {["x"] = (tempOffX-2-boardWidth)/2, ["y"] = (tempOffY-2-boardHeight)/2}
 tempOffX = nil  tempOffY = nil
 
 ---dropper variables and functions
@@ -317,6 +317,7 @@ local function onDropperLanding()
     dropFloatingPuyos()
     local contLoop = true
     while contLoop do
+        sleep(0.4)
         scoreMultiplier = scoreMultiplier + 1
         local matched = getMatchingPuyos() --todo: seems to have more pairs, score is messed up
         for k,v in pairs(matched) do
@@ -326,10 +327,11 @@ local function onDropperLanding()
             end
             
             renderBoard()
+            sleep(0.2)
         end
         renderBoard()
         contLoop = dropFloatingPuyos()
-        sleep(0.3)
+        sleep(0.4)
         renderBoard()
     end
     puyoDropper.disabled = false

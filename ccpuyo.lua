@@ -43,7 +43,7 @@ local function dropperIntersectsBoard(dropper)
     --if the dropper intersects the border of the board itself.
     if (dropper.x < 1 or rotX < 1) then return true end
     if (dropper.x > boardWidth or rotX > boardWidth) then return true end
-    --if (dropper.y < 1 or rotY < 1) then return true end
+    --if (dropper.y < 1 or rotY < 1) then return true end --IGNORE ROOF.
     if (dropper.y > boardHeight or rotY > boardHeight) then return true end
     
     --if the dropper intersects puyos on the board
@@ -63,27 +63,28 @@ local function dropperMoveLeft(dropper)
     end
 end
 local function dropperRotateRight(dropper) 
-    dropper["rotation"] = (dropper.rotation - 1)%4 
-    if (dropperIntersectsBoard(dropper)) then
-        dropperMoveRight(dropper)
-        if (dropperIntersectsBoard(dropper)) then
-            dropperMoveLeft(dropper)
-            dropperMoveLeft(dropper)
-            if (dropperIntersectsBoard(dropper)) then
-                dropperMoveRight(dropper)
-                dropper["rotation"] = (dropper.rotation + 1)%4
-            end
+    dropper["rotation"] = (dropper.rotation - 1)%4
+    
+    if (dropperIntersectsBoard(dropper)) then 
+        --[[newly rotated intersects board
+        -move the opposite of the offset. 
+        -   (moves up if intersects from bottom)
+        -   (moves right if intersects from left, etc)
+        --]]
+        local xRot, yRot = dropperGetRotOffset(dropper)
+        dropper["x"] = dropper.x - xRot
+        dropper["y"] = dropper.y - yRot
+        
+        if (dropperIntersectsBoard(dropper)) then --still intersects, move back
+            dropper["x"] = dropper.x + xRot
+            dropper["y"] = dropper.y + yRot
+            --undo rotation, no space
+            dropper["rotation"] = (dropper.rotation + 1)%4 
         end
     end
 end
-local function dropperRotateLeft(dropper) 
-    dropper["rotation"] = (dropper.rotation + 1)%4
-    if (dropperIntersectsBoard(dropper)) then
-        dropper["rotation"] = (dropper.rotation - 1)%4
-    end
-end
 local function dropperQuickDrop(dropper)
-    dropperTimer = 1
+    dropperTimer = 15
 end
 
 puyoDropper.controls = {[keys.right] = dropperMoveRight, 

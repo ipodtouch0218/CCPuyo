@@ -347,7 +347,7 @@ local function dropGarbage()
         end
     else
         local possibleLocs = {1,2,3,4,5,6}
-        for _=1,queuedGarbage do
+        for _=1,boardWidth-queuedGarbage do
             table.remove(possibleLocs, math.random(tableLength(possibleLocs)))
         end
         for x in ipairs(possibleLocs) do

@@ -10,6 +10,7 @@ local gameSpeed = (1.2)*20 --1.2 seconds between the puyo dropping and 20 tps
 local score = 0
 local queuedPuyos = {}
 local isPaused = false
+local gameover = false
 
 --playing status variables
 local opponentBoard --board of the opponent
@@ -462,17 +463,27 @@ end
 
 
 --singleplayer
-term.clear()
-renderBoard()
-resetDropper()
-puyoDropper.disabled = false
-while true do
-    if (isPaused) then 
-        local xSiz, ySiz = term.getSize()
-        drawStringAt((xSiz/2)-3, (ySiz)/2, "PAUSED", colors.white, colors.gray)
-        thrd_checkForKeys()
-    else
-        parallel.waitForAny(thrd_checkForKeys, thrd_playGame)
+local function playGame(singleplayer)
+    gameover = false
+    term.clear()
+    renderBoard()
+    resetDropper()
+    puyoDropper.disabled = false
+    while true do
+        if (gameover) then 
+            --gameEnd
+            return --stop the game if game is over.
+        end 
+        
+        if (isPaused) then
+            local xSiz, ySiz = term.getSize()
+            drawStringAt((xSiz/2)-3, (ySiz)/2, "PAUSED", colors.white, colors.gray)
+        end
+        if not ((singleplayer) and (isPaused)) then
+            parallel.waitForAny(thrd_checkForKeys, thrd_playGame)
+        elseif (singleplayer) and (isPaused) then
+            thrd_checkForKeys() 
+        end
     end
 end
 
@@ -488,3 +499,6 @@ clientID = rednet.lookup("puyo-puyo","puyogame")
 if (clientID == nil) then --todo: hosting shiz
     rednet.host("puyo-puyo", "puyogame")
 ]]
+
+---=START MAIN GAME FUNCTION CALLS
+playGame(true)

@@ -453,6 +453,7 @@ renderBoard()
 resetDropper()
 puyoDropper.disabled = false
 while true do
+    drawStringAt(1,1,"isPaused: " .. isPaused)
     if (isPaused) then 
         local xSiz, ySiz = term.getSize()
         drawStringAt((xSiz/2)-3, (ySiz)/2, "PAUSED", colors.white, colors.gray)

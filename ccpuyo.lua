@@ -29,6 +29,7 @@ tempOffX = nil  tempOffY = nil
 ---dropper variables and functions
 local puyoDropper = {["x"] = 3, ["y"] = 1, ["rotation"] = 2}
 local dropperTimer = gameSpeed
+local landingTimer = dropperTimer
 
 local function dropperGetRotOffset(dropper)
     if (dropper.rotation == 0) then return 0,1 end
@@ -330,7 +331,7 @@ local function onDropperLanding()
                 puyoBoard[loc] = nil
             end
             renderBoard()
-            sleep(0.1)
+            sleep(0.2)
         end
         
         contLoop = dropFloatingPuyos()
@@ -371,14 +372,18 @@ local function thrd_playGame()
     end
     dropperTimer = dropperTimer - 1
     if (dropperTimer <= 0) then
-       puyoDropper.y = puyoDropper.y + 1
-       if (dropperIntersectsBoard(puyoDropper)) then
-           puyoDropper.y = puyoDropper.y - 1
-           onDropperLanding()
-           puyoDropper.disabled = false
-       end
-       dropperTimer = gameSpeed 
-       renderBoard()
+        puyoDropper.y = puyoDropper.y + 1
+        if (dropperIntersectsBoard(puyoDropper)) then
+             puyoDropper.y = puyoDropper.y - 1
+             landingTimer = landingTimer - 1
+             if (landingTimer <= 0) then
+                 onDropperLanding()
+                 puyoDropper.disabled = false
+             end
+        else
+            dropperTimer = gameSpeed
+        end
+        renderBoard()
     end
     sleep(0.05)
 end
@@ -391,7 +396,7 @@ resetDropper()
 puyoDropper.disabled = false
 while true do
     if (isPaused) then 
-        local xSiz, ySiz = term,getSize()
+        local xSiz, ySiz = term.getSize()
         term.setCursorPos((xSiz/2)-3, ySiz/2)
         term.setTextColor(colors.white)
         term.setBackgroundColor(colors.gray)

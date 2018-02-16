@@ -257,7 +257,7 @@ local function renderBoard()
             paintutils.drawPixel(drawX + xRotOffset, drawY + yRotOffset, otherPuyo.color) 
         else
             drawStringAt(drawX, drawY, mainPuyo.symbol, colors.lightGray, colors.black)
-            drawStringAt(drawX+xRotOffset, drawY+yRotOffset, mainPuyo.symbol, colors.lightGray, colors.black)
+            drawStringAt(drawX+xRotOffset, drawY+yRotOffset, otherPuyo.symbol, colors.lightGray, colors.black)
         end
     end
     

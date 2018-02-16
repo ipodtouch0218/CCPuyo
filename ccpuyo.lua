@@ -316,8 +316,9 @@ local function onDropperLanding()
     puyoBoard[(x+xRot)..";"..(y+yRot)] = puyoDropper.other
     
     resetDropper()
+    sleep(0.05)
     dropFloatingPuyos()
-    sleep(0.2)
+    sleep(0.15)
     local contLoop = true
     while contLoop do
         scoreMultiplier = scoreMultiplier + 1
@@ -328,6 +329,7 @@ local function onDropperLanding()
             for _,loc in pairs(v) do
                 puyoBoard[loc] = nil
             end
+            renderBoard()
             sleep(0.1)
         end
         
@@ -335,7 +337,6 @@ local function onDropperLanding()
         renderBoard()
         sleep(0.2)
     end
-    puyoDropper.disabled = false
     renderBoard()
 end
 
@@ -345,14 +346,17 @@ local function thrd_checkForKeys()
     local event, key, held = os.pullEvent("key")
     local keyMethod = puyoDropper.controls[key]
     
-    if (puyoDropper.disabled) then
-        sleep(1)
+    if (key == keys.p) then
+         isPaused = not isPaused
+    end
+    
+    if (isPaused) then
         return
     end
     
-    if (key == keys.p) and not (isMultiplayer) then
-       paused = not paused
-       return 
+    if (puyoDropper.disabled) then
+        sleep(1)
+        return
     end
     if (keyMethod ~= nil) then
         keyMethod(puyoDropper)
@@ -367,12 +371,13 @@ local function thrd_playGame()
     end
     dropperTimer = dropperTimer - 1
     if (dropperTimer <= 0) then
-       puyoDropper["y"] = puyoDropper.y + 1
+       puyoDropper.y = puyoDropper.y + 1
        renderBoard()
        if (dropperIntersectsBoard(puyoDropper)) then
-           puyoDropper["y"] = puyoDropper.y - 1
+           puyoDropper.y = puyoDropper.y - 1
            renderBoard()
            onDropperLanding()
+           puyoDropper.disabled = false
        end
        dropperTimer = gameSpeed 
     end
@@ -392,6 +397,7 @@ while true do
         term.setTextColor(colors.white)
         term.setBackgroundColor(colors.gray)
         print("PAUSED")
+        thrd_checkForKeys()
         return
     end
     parallel.waitForAny(thrd_checkForKeys, thrd_playGame)

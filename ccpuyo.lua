@@ -372,14 +372,13 @@ local function thrd_playGame()
     dropperTimer = dropperTimer - 1
     if (dropperTimer <= 0) then
        puyoDropper.y = puyoDropper.y + 1
-       renderBoard()
        if (dropperIntersectsBoard(puyoDropper)) then
            puyoDropper.y = puyoDropper.y - 1
-           renderBoard()
            onDropperLanding()
            puyoDropper.disabled = false
        end
        dropperTimer = gameSpeed 
+       renderBoard()
     end
     sleep(0.05)
 end

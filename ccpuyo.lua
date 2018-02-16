@@ -21,6 +21,8 @@ local puyoBoard = {} --represents the puyo board, 6x12 by default.
 local boardWidth = 6 
 local boardHeight = 12
 
+local queuedGarbage = 10
+
 ---display variables
 local tempOffX, tempOffY = term.getSize()
 local boardOffset = {["x"] = (tempOffX-2-boardWidth)/2, ["y"] = (tempOffY-2-boardHeight)/2}
@@ -282,6 +284,27 @@ local function renderBoard()
     
     --render score
     drawStringAt(boardOffset.x,boardOffset.y+boardHeight+2,"Score: " .. score,colors.white,colors.black)
+    
+    --render queued garbage
+    if (queuedGarbage > 0) then
+        local tempGarbage = queuedGarbage
+        local garbageString = ""
+        
+        while (tempGarbage > 0) do
+            if (tempGarbage > boardWidth*5) then
+                garbageString = garbageString.."O"
+                tempGarbage = tempGarbage - (boardWidth*5)
+            elseif (tempGarbage > boardWidth) then
+                garbageString = "o"..garbageString
+                tempGarbage = tempGarbage - (boardWidth)
+            else
+                garbageString = "."..garbageString
+                tempGarbage = 0
+            end
+            if (tempGarbage)
+        end
+        drawStringAt(boardOffset.x,boardOffset.y-1,garbageString,colors.lightGray,colors.black)
+    end
 end
 
 local function queuePuyos()
@@ -304,6 +327,39 @@ local function resetDropper()
     puyoDropper.disabled = true
     
     table.remove(queuedPuyos,1)
+end
+
+local function dropGarbage()
+    if (queuedGarbage == 0) then
+        return
+    end
+    
+    if (queuedGarbage > (boardWidth)) then
+        local counter = 0
+        while (queuedGarbage > (boardWidth)) and (counter < 5) do
+            counter = counter + 1 
+            for x=1,boardWidth do
+                if (puyoBoard[x..";1"] == nil) then
+                    puyoBoard[x..";1"] = "garbage"
+                    queuedGarbage = queuedGarbage - 1
+                end 
+            end
+            dropFloatingPuyos()
+        end
+    else
+        local possibleLocs = {1,2,3,4,5,6}
+        for i=1,queuedGarbage do
+            table.remove(possibleLocs,math.random(tableLength(i)))
+        end
+        for x in ipairs(possibleLocs) do
+            if (puyoBoard[x..";1"] == nil) then
+                puyoBoard[x..";1"] = "garbage"
+                queuedGarbage = queuedGarbage - 1
+            end
+        end
+    end
+        
+    dropFloatingPuyos()
 end
 
 local function onDropperLanding()
@@ -338,6 +394,7 @@ local function onDropperLanding()
         renderBoard()
         sleep(0.2)
     end
+    dropGarbage()
     renderBoard()
 end
 
@@ -397,14 +454,11 @@ puyoDropper.disabled = false
 while true do
     if (isPaused) then 
         local xSiz, ySiz = term.getSize()
-        term.setCursorPos((xSiz/2)-3, ySiz/2)
-        term.setTextColor(colors.white)
-        term.setBackgroundColor(colors.gray)
-        print("PAUSED")
+        drawStringAt((xSiz/2)-3, (ySiz)/2, "PAUSED", colors.white, colors.gray)
         thrd_checkForKeys()
-        return
+    else
+        parallel.waitForAny(thrd_checkForKeys, thrd_playGame)
     end
-    parallel.waitForAny(thrd_checkForKeys, thrd_playGame)
 end
 
 --[[

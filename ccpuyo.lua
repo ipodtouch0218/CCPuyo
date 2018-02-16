@@ -299,7 +299,7 @@ local function renderBoard()
                 tempGarbage = tempGarbage - (boardWidth)
             else
                 garbageString = "."..garbageString
-                tempGarbage = 0
+                tempGarbage = tempGarbage - 1
             end
         end
         drawStringAt(boardOffset.x,boardOffset.y-1,garbageString,colors.lightGray,colors.black)
@@ -347,8 +347,8 @@ local function dropGarbage()
         end
     else
         local possibleLocs = {1,2,3,4,5,6}
-        for i=1,queuedGarbage do
-            table.remove(possibleLocs,math.random(tableLength(i)))
+        for _=1,queuedGarbage do
+            table.remove(possibleLocs, math.random(tableLength(possibleLocs)))
         end
         for x in ipairs(possibleLocs) do
             if (puyoBoard[x..";1"] == nil) then

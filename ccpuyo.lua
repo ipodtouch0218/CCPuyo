@@ -181,7 +181,7 @@ local function getMatchingPuyos()
                         if (puyoBoard[v] ~= "garbage") then 
                             length = length + 1
                         end
-                        table.insert(checked, k)--the key is the location 
+                        table.insert(checked, v)
                     end
                     
                     if (length >= 4) then

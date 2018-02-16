@@ -21,7 +21,7 @@ local puyoBoard = {} --represents the puyo board, 6x12 by default.
 local boardWidth = 6 
 local boardHeight = 12
 
-local queuedGarbage = 10
+local queuedGarbage = 0
 
 ---display variables
 local tempOffX, tempOffY = term.getSize()
@@ -31,7 +31,7 @@ tempOffX = nil  tempOffY = nil
 ---dropper variables and functions
 local puyoDropper = {["x"] = 3, ["y"] = 1, ["rotation"] = 2}
 local dropperTimer = gameSpeed
-local landingTimer = dropperTimer
+local landingTimer = 10
 
 local function dropperGetRotOffset(dropper)
     if (dropper.rotation == 0) then return 0,1 end
@@ -233,7 +233,11 @@ local function renderBoard()
                     paintutils.drawPixel(x+boardOffset.x,y+boardOffset.y,info.color)
                     --drawStringAt(x+boardOffset.x,y+boardOffset.y,"o",info.color,colors.black)
                 else
-                    drawStringAt(x+boardOffset.x,y+boardOffset.y,info.symbol,colors.lightGray,colors.black)
+                    if (puyoBoard[loc] == "garbage") then
+                        drawStringAt(x+boardOffset.x,y+boardOffset.y,info.symbol,colors.white,colors.gray)
+                    else
+                        drawStringAt(x+boardOffset.x,y+boardOffset.y,info.symbol,colors.lightGray,colors.black)
+                    end
                 end
             end
         end
@@ -378,13 +382,19 @@ local function onDropperLanding()
     local contLoop = true
     while contLoop do
         scoreMultiplier = scoreMultiplier + 1
-        local matched = getMatchingPuyos() --todo: seems to have more pairs, score is messed up
+        local matched = getMatchingPuyos()
         
         for k,v in pairs(matched) do
             matchedAmount = 0
             for _,loc in pairs(v) do
+                if (puyoBoard[loc] ~= "garbage") then
+                    matchedAmount = matchedAmount + 1
+                end
                 puyoBoard[loc] = nil
             end
+            
+            score = score + ((matchedAmount*10)*scoreMultiplier)
+            
             renderBoard()
             sleep(0.2)
         end
@@ -404,7 +414,11 @@ local function thrd_checkForKeys()
     local keyMethod = puyoDropper.controls[key]
     
     if (key == keys.p) then
-         isPaused = not isPaused
+         if (isPaused) then
+            isPaused = false 
+         else
+            isPaused = true
+         end
     end
     
     if (isPaused) then
@@ -436,7 +450,7 @@ local function thrd_playGame()
                  onDropperLanding()
                  puyoDropper.disabled = false
                  dropperTimer = gameSpeed
-                 landingTimer = gameSpeed
+                 landingTimer = 10
              end
         else
             dropperTimer = gameSpeed
@@ -453,7 +467,6 @@ renderBoard()
 resetDropper()
 puyoDropper.disabled = false
 while true do
-    drawStringAt(1,1,"isPaused: " .. tostring(isPaused))
     if (isPaused) then 
         local xSiz, ySiz = term.getSize()
         drawStringAt((xSiz/2)-3, (ySiz)/2, "PAUSED", colors.white, colors.gray)

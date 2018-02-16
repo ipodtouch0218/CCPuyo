@@ -9,10 +9,12 @@ local puyoInfo = {["blue"] = {["color"] = colors.blue, ["symbol"] = "B"},
 local gameSpeed = (1.2)*20 --1.2 seconds between the puyo dropping and 20 tps
 local score = 0
 local queuedPuyos = {}
+local isPaused = false
 
 --playing status variables
 local opponentBoard --board of the opponent
 local clientID --id of the opponent
+local isMultiplayer = false --disallows
 
 --board variables
 local puyoBoard = {} --represents the puyo board, 6x12 by default.
@@ -195,7 +197,7 @@ local function dropFloatingPuyos()
     local returnval = false --if any puyo fell: return true
     for x=1,boardWidth do
         local supportedBy = boardHeight+1
-        for yTmp=1,boardHeight do 
+        for yTmp=0,boardHeight do --why 0? so if you stack one above the top it doesnt disappear
             local y = (boardHeight+1)-yTmp 
             local stringLoc = x..";"..y
             
@@ -348,6 +350,10 @@ local function thrd_checkForKeys()
         sleep(1)
         return
     end
+    if (key == keys.p) and not (isMultiplayer) then
+       paused = not paused
+       return 
+    end
     if (keyMethod ~= nil) then
         keyMethod(puyoDropper)
         renderBoard()
@@ -380,6 +386,14 @@ renderBoard()
 resetDropper()
 puyoDropper.disabled = false
 while true do
+    if (isPaused) then 
+        local xSiz, ySiz = term,getSize()
+        term.setCursorPos((xSiz/2)-3, ySiz/2)
+        term.setTextColor(colors.white)
+        term.setBackgroundColor(colors.gray)
+        print("PAUSED")
+        return
+    end
     parallel.waitForAny(thrd_checkForKeys, thrd_playGame)
 end
 

@@ -180,8 +180,8 @@ local function getMatchingPuyos()
                     for k,v in pairs(chain) do
                         if (puyoBoard[v] ~= "garbage") then 
                             length = length + 1
-                            table.insert(checked, k)--the key is the location 
                         end
+                        table.insert(checked, k)--the key is the location 
                     end
                     
                     if (length >= 4) then

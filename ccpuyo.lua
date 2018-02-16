@@ -355,14 +355,14 @@ local function thrd_checkForKeys()
     end
     
     if (puyoDropper.disabled) then
-        sleep(1)
+        sleep(100)
         return
     end
     if (keyMethod ~= nil) then
         keyMethod(puyoDropper)
         renderBoard()
     end
-    sleep(1)
+    sleep(100)
 end
 
 local function thrd_playGame()

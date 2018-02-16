@@ -7,7 +7,6 @@ local puyoInfo = {["blue"] = {["color"] = colors.blue, ["symbol"] = "B"},
                   ["purple"] = {["color"] = colors.purple, ["symbol"] = "P"},
                   ["garbage"] = {["color"] = colors.lightGray, ["symbol"] = "."}}
 local gameSpeed = (1.2)*20 --1.2 seconds between the puyo dropping and 20 tps
-local score = 0
 local queuedPuyos = {}
 local isPaused = false
 local gameover = false
@@ -219,7 +218,7 @@ local function dropFloatingPuyos()
 end
 
 
-local function renderBoard()
+local function renderBoard(board)
     term.setBackgroundColor(colors.black)
     term.clear()
     
@@ -228,13 +227,13 @@ local function renderBoard()
         for y=1,boardHeight do
             local loc = x..";"..y
            
-            if (puyoBoard[loc] ~= nil) then
-                local info = puyoInfo[puyoBoard[loc]]
+            if (board.puyos[loc] ~= nil) then
+                local info = puyoInfo[board.puyos[loc]]
                 if (term.isColor()) then
                     paintutils.drawPixel(x+boardOffset.x,y+boardOffset.y,info.color)
                     --drawStringAt(x+boardOffset.x,y+boardOffset.y,"o",info.color,colors.black)
                 else
-                    if (puyoBoard[loc] == "garbage") then
+                    if (board.puyos[loc] == "garbage") then
                         drawStringAt(x+boardOffset.x,y+boardOffset.y,info.symbol,colors.white,colors.gray)
                     else
                         drawStringAt(x+boardOffset.x,y+boardOffset.y,info.symbol,colors.lightGray,colors.black)
@@ -288,7 +287,7 @@ local function renderBoard()
     end
     
     --render score
-    drawStringAt(boardOffset.x,boardOffset.y+boardHeight+2,"Score: " .. score,colors.white,colors.black)
+    drawStringAt(boardOffset.x,boardOffset.y+boardHeight+2,"Score: " .. board.score,colors.white,colors.black)
     
     --render queued garbage
     if (queuedGarbage > 0) then
@@ -366,6 +365,10 @@ local function dropGarbage()
     dropFloatingPuyos()
 end
 
+local function simulateBoard(board)
+    
+    
+
 local function onDropperLanding()
     local scoreMultiplier = 0
     
@@ -394,7 +397,7 @@ local function onDropperLanding()
                 puyoBoard[loc] = nil
             end
             
-            score = score + ((matchedAmount*10)*scoreMultiplier)
+            puyoBoard.score = puyoBoard.score + ((matchedAmount*10)*scoreMultiplier)
             
             renderBoard()
             sleep(0.2)
@@ -438,7 +441,7 @@ local function thrd_checkForKeys()
 end
 
 local function thrd_playGame()
-    if (puyoDropper.disable) then
+    if (puyoDropper.disabled) then
         return 
     end
     dropperTimer = dropperTimer - 1

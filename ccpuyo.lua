@@ -301,7 +301,6 @@ local function renderBoard()
                 garbageString = "."..garbageString
                 tempGarbage = 0
             end
-            if (tempGarbage)
         end
         drawStringAt(boardOffset.x,boardOffset.y-1,garbageString,colors.lightGray,colors.black)
     end

@@ -329,7 +329,7 @@ local function resetDropper()
 end
 
 local function dropGarbage()
-    if (queuedGarbage == 0) then
+    if (queuedGarbage <= 0) then
         return
     end
     

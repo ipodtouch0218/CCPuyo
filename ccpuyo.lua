@@ -322,19 +322,17 @@ local function onDropperLanding()
         sleep(0.4)
         scoreMultiplier = scoreMultiplier + 1
         local matched = getMatchingPuyos() --todo: seems to have more pairs, score is messed up
+        score = score + (tableLength(v)*scoreMultiplier)
         for k,v in pairs(matched) do
-            score = score + (tableLength(v)*scoreMultiplier)
             for _,loc in pairs(v) do
                 puyoBoard[loc] = nil
             end
-            
-            renderBoard()
-            sleep(0.2)
         end
         renderBoard()
+        sleep(0.2)
         contLoop = dropFloatingPuyos()
-        sleep(0.4)
         renderBoard()
+        sleep(0.4)
     end
     puyoDropper.disabled = false
     renderBoard()
@@ -350,6 +348,7 @@ local function thrd_checkForKeys()
         sleep(1)
         return
     end
+    
     if (key == keys.p) and not (isMultiplayer) then
        paused = not paused
        return 

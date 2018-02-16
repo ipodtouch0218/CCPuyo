@@ -17,11 +17,9 @@ local clientID --id of the opponent
 local isMultiplayer = false --disallows
 
 --board variables
-local puyoBoard = {} --represents the puyo board, 6x12 by default.
+local puyoBoard = {["score"] = 0, ["garbage"] = 0} --represents the puyo board, 6x12 by default.
 local boardWidth = 6 
 local boardHeight = 12
-
-local queuedGarbage = 0
 
 ---display variables
 local tempOffX, tempOffY = term.getSize()
@@ -40,7 +38,7 @@ local function dropperGetRotOffset(dropper)
     if (dropper.rotation == 3) then return -1,0 end
 end
 
-local function dropperIntersectsBoard(dropper)
+local function dropperIntersectsBoard(board, dropper)
     
     local loc = dropper.x..";"..dropper.y --first puyo loc
     local rotX, rotY = dropperGetRotOffset(dropper)
@@ -54,25 +52,25 @@ local function dropperIntersectsBoard(dropper)
     if (dropper.y > boardHeight or rotY > boardHeight) then return true end
     
     --if the dropper intersects puyos on the board
-    return not ((puyoBoard[loc] == nil) and (puyoBoard[rotX..";"..rotY] == nil)) 
+    return not ((board.puyos[loc] == nil) and (board.puyos[rotX..";"..rotY] == nil)) 
 end
 
 local function dropperMoveRight(dropper) 
     dropper["x"] = dropper.x + 1 
-    if (dropperIntersectsBoard(dropper)) then 
+    if (dropperIntersectsBoard(puyoBoard, dropper)) then 
         dropper["x"] = dropper.x - 1
     end
 end
 local function dropperMoveLeft(dropper) 
     dropper["x"] = dropper.x - 1 
-    if (dropperIntersectsBoard(dropper)) then
+    if (dropperIntersectsBoard(puyoBoard, dropper)) then
         dropper["x"] = dropper.x + 1
     end
 end
 local function dropperRotateRight(dropper) 
     dropper["rotation"] = (dropper.rotation - 1)%4
     
-    if (dropperIntersectsBoard(dropper)) then 
+    if (dropperIntersectsBoard(puyoBoard, dropper)) then 
         --[[newly rotated intersects board
         -move the opposite of the offset. 
         -   (moves up if intersects from bottom)
@@ -141,7 +139,7 @@ local function getRandomPuyoPair()
 end
 
 
-local function getPuyoChains(chain, startX, startY, puyoType)
+local function getPuyoChains(board, chain, startX, startY, puyoType)
     for x=-1,1 do
         for y=-1,1 do
             if not (x ~= 0 and y ~= 0) then --remove the corners
@@ -151,10 +149,10 @@ local function getPuyoChains(chain, startX, startY, puyoType)
                     local toCheckLocation = toCheckX..";"..toCheckY
                     
                     if not (tableHasValue(chain, toCheckLocation)) then
-                        if (puyoType == puyoBoard[toCheckLocation]) then
+                        if (puyoType == board.puyos[toCheckLocation]) then
                             table.insert(chain, toCheckLocation) 
                             getPuyoChains(chain, toCheckX, toCheckY, puyoType)
-                        elseif (puyoBoard[toCheckLocation] == "garbage") then
+                        elseif (board.puyos[toCheckLocation] == "garbage") then
                             table.insert(chain, toCheckLocation)
                         end
                     end                    
@@ -164,21 +162,21 @@ local function getPuyoChains(chain, startX, startY, puyoType)
     end
 end
 
-local function getMatchingPuyos()
+local function getMatchingPuyos(board)
     local checked = {}
     local matching = {}
     for x=1,boardWidth do
         for y=1,boardHeight do
             local location = x..";"..y
-            if (puyoBoard[location] ~= null) then --if the location is a puyo or nil
+            if (board.puyos[location] ~= null) then --if the location is a puyo or nil
                 if not (tableHasValue(checked,location)) then --if the location was checked already
                     --this puyo was not checked... check for other surrounding puyos
                     local chain = {} --new table, stores puyos in the chain to this one
-                    getPuyoChains(chain, x, y, puyoBoard[location])
+                    getPuyoChains(chain, x, y, board.puyos[location])
                     
                     local length = 0
                     for k,v in pairs(chain) do
-                        if (puyoBoard[v] ~= "garbage") then 
+                        if (board.puyos[v] ~= "garbage") then 
                             length = length + 1
                         end
                         table.insert(checked, v)
@@ -196,7 +194,7 @@ local function getMatchingPuyos()
     return matching
 end
 
-local function dropFloatingPuyos()
+local function dropFloatingPuyos(board)
     local returnval = false --if any puyo fell: return true
     for x=1,boardWidth do
         local supportedBy = boardHeight+1
@@ -204,11 +202,11 @@ local function dropFloatingPuyos()
             local y = (boardHeight+1)-yTmp 
             local stringLoc = x..";"..y
             
-            if (puyoBoard[stringLoc] ~= nil) then
+            if (board.puyos[stringLoc] ~= nil) then
                 supportedBy = supportedBy-1
                 if (y ~= supportedBy) then --the support ISNT under current puyo
-                    puyoBoard[x..";"..supportedBy] = puyoBoard[stringLoc]
-                    puyoBoard[stringLoc] = nil
+                    board.puyos[x..";"..supportedBy] = board.puyos[stringLoc]
+                    board.puyos[stringLoc] = nil
                     returnval = true
                 end
             end
@@ -218,7 +216,7 @@ local function dropFloatingPuyos()
 end
 
 
-local function renderBoard(board)
+local function renderBoard(board, dropper)
     term.setBackgroundColor(colors.black)
     term.clear()
     
@@ -244,14 +242,14 @@ local function renderBoard(board)
     end
     
     --render puyo dropper
-    if not (puyoDropper.disabled) and (puyoDropper.main ~= nil) then
-        local mainPuyo = puyoInfo[puyoDropper.main]
+    if not (dropper.disabled) and (dropper.main ~= nil) then
+        local mainPuyo = puyoInfo[dropper.main]
         local otherPuyo = puyoInfo[puyoDropper.other]
             
-        local drawX = boardOffset.x + puyoDropper.x
-        local drawY = boardOffset.y + puyoDropper.y
+        local drawX = boardOffset.x + dropper.x
+        local drawY = boardOffset.y + dropper.y
         
-        local xRotOffset, yRotOffset = dropperGetRotOffset(puyoDropper)
+        local xRotOffset, yRotOffset = dropperGetRotOffset(dropper)
         if (term.isColor()) then
             paintutils.drawPixel(drawX, drawY, mainPuyo.color)
             paintutils.drawPixel(drawX + xRotOffset, drawY + yRotOffset, otherPuyo.color) 
@@ -290,8 +288,8 @@ local function renderBoard(board)
     drawStringAt(boardOffset.x,boardOffset.y+boardHeight+2,"Score: " .. board.score,colors.white,colors.black)
     
     --render queued garbage
-    if (queuedGarbage > 0) then
-        local tempGarbage = queuedGarbage
+    if (board.garbage > 0) then
+        local tempGarbage = board.garbage
         local garbageString = ""
         
         while (tempGarbage > 0) do
@@ -332,83 +330,83 @@ local function resetDropper()
     table.remove(queuedPuyos,1)
 end
 
-local function dropGarbage()
-    if (queuedGarbage <= 0) then
+local function dropGarbage(board)
+    if (board.garbage <= 0) then
         return
     end
     
-    if (queuedGarbage > (boardWidth)) then
+    if (board.garbage > (boardWidth)) then
         local counter = 0
-        while (queuedGarbage > (boardWidth)) and (counter < 5) do
+        while (board.garbage > (boardWidth)) and (counter < 5) do
             counter = counter + 1 
             for x=1,boardWidth do
-                if (puyoBoard[x..";1"] == nil) then
-                    puyoBoard[x..";1"] = "garbage"
-                    queuedGarbage = queuedGarbage - 1
+                if (board.puyos[x..";1"] == nil) then
+                    board.puyos[x..";1"] = "garbage"
+                    board.garbage = board.garbage - 1
                 end 
             end
-            dropFloatingPuyos()
+            dropFloatingPuyos(board)
         end
     else
         local possibleLocs = {1,2,3,4,5,6}
-        for _=1,boardWidth-queuedGarbage do
+        for _=1,boardWidth-board.garbage do
             table.remove(possibleLocs, math.random(tableLength(possibleLocs)))
         end
         for x in ipairs(possibleLocs) do
-            if (puyoBoard[x..";1"] == nil) then
-                puyoBoard[x..";1"] = "garbage"
-                queuedGarbage = queuedGarbage - 1
+            if (board.puyos[x..";1"] == nil) then
+                board.puyos[x..";1"] = "garbage"
+                board.garbage = board.garbage - 1
             end
         end
     end
         
-    dropFloatingPuyos()
+    dropFloatingPuyos(board)
+    renderBoard(board)
 end
 
+--board dropping puyos, making matches.
 local function simulateBoard(board)
     
+    dropFloatingPuyos(board) --drop puyos before starting matches
     
-
+    local scoreMultiplier = 1
+    local continueDropping = true
+    
+    while (continueDropping) do
+        local matches = getMatchingPuyos(board)
+        
+        for chain in ipairs(matched) do
+            local chainScore = 0
+            for location in ipairs(chain) do
+                if (board.puyos[location] ~= "garbage") then
+                    chainScore = chainScore + 10
+                end
+                board.puyos[location] = nil
+            end
+            board.score = board.score + (chainScore*scoreMultiplier)
+        end
+            
+        
+        scoreMultiplier = scoreMultiplier + 1
+        continueDropping = dropFloatingPuyos()
+    end
+end
+    
+    
+--the dropper landing on the main board
 local function onDropperLanding()
     local scoreMultiplier = 0
     
     puyoDropper.disabled = true
     local x = puyoDropper.x
     local y = puyoDropper.y
-    puyoBoard[x..";"..y] = puyoDropper.main
+    puyoBoard.puyos[x..";"..y] = puyoDropper.main
     local xRot, yRot = dropperGetRotOffset(puyoDropper)
-    puyoBoard[(x+xRot)..";"..(y+yRot)] = puyoDropper.other
+    puyoBoard.puyos[(x+xRot)..";"..(y+yRot)] = puyoDropper.other
     
     resetDropper()
-    sleep(0.05)
-    dropFloatingPuyos()
-    sleep(0.15)
-    local contLoop = true
-    while contLoop do
-        scoreMultiplier = scoreMultiplier + 1
-        local matched = getMatchingPuyos()
-        
-        for k,v in pairs(matched) do
-            matchedAmount = 0
-            for _,loc in pairs(v) do
-                if (puyoBoard[loc] ~= "garbage") then
-                    matchedAmount = matchedAmount + 1
-                end
-                puyoBoard[loc] = nil
-            end
-            
-            puyoBoard.score = puyoBoard.score + ((matchedAmount*10)*scoreMultiplier)
-            
-            renderBoard()
-            sleep(0.2)
-        end
-        
-        contLoop = dropFloatingPuyos()
-        renderBoard()
-        sleep(0.2)
-    end
-    dropGarbage()
-    renderBoard()
+    simulateBoard(puyoBoard)
+    dropGarbage(puyoBoard)
 end
 
 --< MAIN PROGRAM LOOPS >--
@@ -447,7 +445,7 @@ local function thrd_playGame()
     dropperTimer = dropperTimer - 1
     if (dropperTimer <= 0) then
         puyoDropper.y = puyoDropper.y + 1
-        if (dropperIntersectsBoard(puyoDropper)) then
+        if (dropperIntersectsBoard(puyoBoard, puyoDropper)) then
              puyoDropper.y = puyoDropper.y - 1
              landingTimer = landingTimer - 1
              if (landingTimer <= 0) then
@@ -464,28 +462,46 @@ local function thrd_playGame()
     sleep(0.05)
 end
 
+local function thrd_receiveRednetMessages()
+    
+    
+    
+end
 
 --singleplayer
 local function playGame(singleplayer)
     gameover = false
     term.clear()
-    renderBoard()
     resetDropper()
     puyoDropper.disabled = false
+    
+    if not (singleplayer) then
+        --connect or host server
+    end
+    
     while true do
         if (gameover) then 
             --gameEnd
             return --stop the game if game is over.
+            --for now anyway
         end 
         
         if (isPaused) then
             local xSiz, ySiz = term.getSize()
             drawStringAt((xSiz/2)-3, (ySiz)/2, "PAUSED", colors.white, colors.gray)
-        end
-        if not ((singleplayer) and (isPaused)) then
-            parallel.waitForAny(thrd_checkForKeys, thrd_playGame)
-        elseif (singleplayer) and (isPaused) then
-            thrd_checkForKeys() 
+            --todo: change term.getSize to a 4th 
+            --also think about the portable
+        end 
+        
+        if (singleplayer) then
+            if not (isPaused) then
+                parallel.waitForAny(thrd_playGame, thrd_checkForKeys)
+            else
+                thrd_checkForKeys()
+            end
+        else
+            
+            
         end
     end
 end
@@ -503,5 +519,5 @@ if (clientID == nil) then --todo: hosting shiz
     rednet.host("puyo-puyo", "puyogame")
 ]]
 
----=START MAIN GAME FUNCTION CALLS
+--------START MAIN GAME FUNCTION CALLS--------
 playGame(true)

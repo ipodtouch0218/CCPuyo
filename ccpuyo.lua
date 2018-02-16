@@ -435,6 +435,8 @@ local function thrd_playGame()
              if (landingTimer <= 0) then
                  onDropperLanding()
                  puyoDropper.disabled = false
+                 dropperTimer = gameSpeed
+                 landingTimer = gameSpeed
              end
         else
             dropperTimer = gameSpeed

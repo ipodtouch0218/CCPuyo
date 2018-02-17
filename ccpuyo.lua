@@ -17,7 +17,7 @@ local clientID --id of the opponent
 local isMultiplayer = false --disallows
 
 --board variables
-local puyoBoard = {["score"] = 0, ["garbage"] = 0} --represents the puyo board, 6x12 by default.
+local puyoBoard = {["puyos"] = {}, ["score"] = 0, ["garbage"] = 0} --represents the puyo board, 6x12 by default.
 local boardWidth = 6 
 local boardHeight = 12
 
@@ -80,7 +80,7 @@ local function dropperRotateRight(dropper)
         dropper["x"] = dropper.x - xRot
         dropper["y"] = dropper.y - yRot
         
-        if (dropperIntersectsBoard(dropper)) then --still intersects, move back
+        if (dropperIntersectsBoard(puyoBoard, dropper)) then --still intersects, move back
             dropper["x"] = dropper.x + xRot
             dropper["y"] = dropper.y + yRot
             --undo rotation, no space

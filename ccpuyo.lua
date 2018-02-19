@@ -380,11 +380,7 @@ local function simulateBoard(board)
     while (continueDropping) do
         local matches = getMatchingPuyos(board)
         
-        for k,v in pairs(matches) do
-            print(k.." - {"..table.concat(v, ", ").."}")
-        end
-        
-        for chain in ipairs(matches) do
+        for _,chain in pairs(matches) do
             local chainScore = 0
             for location in ipairs(chain) do
                 if (board.puyos[location] ~= "garbage") then

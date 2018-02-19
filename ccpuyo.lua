@@ -380,7 +380,8 @@ local function simulateBoard(board)
     while (continueDropping) do
         local matches = getMatchingPuyos(board)
         
-        print(table.concat(matches, ", "))
+        for k,v in pairs(matches) do
+            print(k.." - {"..table.concat(v, ", ").."}")
         
         for chain in ipairs(matches) do
             local chainScore = 0

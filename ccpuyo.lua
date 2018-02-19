@@ -147,6 +147,8 @@ local function getPuyoChains(board, chain, startX, startY, puyoType)
                     local toCheckY = startY+y
                     local toCheckLocation = toCheckX..";"..toCheckY
                     
+                    print(table.concat(chain, ", "))
+                    
                     if not (tableHasValue(chain, toCheckLocation)) then
                         if (puyoType == board.puyos[toCheckLocation]) then
                             table.insert(chain, toCheckLocation) 
@@ -167,7 +169,7 @@ local function getMatchingPuyos(board)
     for x=1,boardWidth do
         for y=1,boardHeight do
             local location = x..";"..y
-            if (board.puyos[location] ~= null) then --if the location is a puyo or nil
+            if (board.puyos[location] ~= nil) then --if the location is a puyo or nil
                 if not (tableHasValue(checked,location)) then --if the location was checked already
                     --this puyo was not checked... check for other surrounding puyos
                     local chain = {} --new table, stores puyos in the chain to this one
@@ -378,10 +380,8 @@ local function simulateBoard(board)
     while (continueDropping) do
         local matches = getMatchingPuyos(board)
         
-        print(table.concat(matches, ", "))
         for chain in ipairs(matches) do
             local chainScore = 0
-            print(chain)
             for location in ipairs(chain) do
                 if (board.puyos[location] ~= "garbage") then
                     chainScore = chainScore + 10

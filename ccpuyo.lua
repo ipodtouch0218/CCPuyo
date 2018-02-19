@@ -382,6 +382,7 @@ local function simulateBoard(board)
         
         for k,v in pairs(matches) do
             print(k.." - {"..table.concat(v, ", ").."}")
+        end
         
         for chain in ipairs(matches) do
             local chainScore = 0

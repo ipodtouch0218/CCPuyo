@@ -184,6 +184,7 @@ local function getMatchingPuyos(board)
                     end
                     
                     if (length >= 4) then
+                        print(table.concat(chain, ", "))
                         table.insert(matching,chain)
                     end
                 end

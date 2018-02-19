@@ -147,8 +147,6 @@ local function getPuyoChains(board, chain, startX, startY, puyoType)
                     local toCheckY = startY+y
                     local toCheckLocation = toCheckX..";"..toCheckY
                     
-                    print(table.concat(chain, ", "))
-                    
                     if not (tableHasValue(chain, toCheckLocation)) then
                         if (puyoType == board.puyos[toCheckLocation]) then
                             table.insert(chain, toCheckLocation) 
@@ -390,7 +388,6 @@ local function simulateBoard(board)
             end
             board.score = board.score + (chainScore*scoreMultiplier)
         end
-            
         
         scoreMultiplier = scoreMultiplier + 1
         continueDropping = dropFloatingPuyos(board)

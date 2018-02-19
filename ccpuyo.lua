@@ -380,7 +380,7 @@ local function simulateBoard(board)
         
         for _,chain in pairs(matches) do
             local chainScore = 0
-            for location in ipairs(chain) do
+            for __,location in pairs(chain) do
                 if (board.puyos[location] ~= "garbage") then
                     chainScore = chainScore + 10
                 end

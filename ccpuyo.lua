@@ -17,7 +17,7 @@ local clientID --id of the opponent
 local isMultiplayer = false --disallows
 
 --board variables
-local puyoBoard = {["puyos"] = {}, ["score"] = 0, ["garbage"] = 0} --represents the puyo board, 6x12 by default.
+local puyoBoard = {["puyos"] = {}, ["score"] = 0, ["garbage"] = 0, ["dropper"] = {}} --represents the puyo board, 6x12 by default.
 local boardWidth = 6 
 local boardHeight = 12
 
@@ -27,7 +27,6 @@ local boardOffset = {["x"] = (tempOffX-2-boardWidth)/2, ["y"] = (tempOffY-2-boar
 tempOffX = nil  tempOffY = nil
 
 ---dropper variables and functions
-local puyoDropper = {["x"] = 3, ["y"] = 1, ["rotation"] = 2}
 local dropperTimer = gameSpeed
 local landingTimer = 10
 
@@ -92,7 +91,7 @@ local function dropperQuickDrop(dropper)
     dropperTimer = 1
 end
 
-puyoDropper.controls = {[keys.right] = dropperMoveRight, 
+puyoBoard.dropper.controls = {[keys.right] = dropperMoveRight, 
     [keys.left] = dropperMoveLeft, [keys.up] = dropperRotateRight,
     [keys.down] = dropperQuickDrop}
 
@@ -151,7 +150,7 @@ local function getPuyoChains(board, chain, startX, startY, puyoType)
                     if not (tableHasValue(chain, toCheckLocation)) then
                         if (puyoType == board.puyos[toCheckLocation]) then
                             table.insert(chain, toCheckLocation) 
-                            getPuyoChains(chain, toCheckX, toCheckY, puyoType)
+                            getPuyoChains(board, chain, toCheckX, toCheckY, puyoType)
                         elseif (board.puyos[toCheckLocation] == "garbage") then
                             table.insert(chain, toCheckLocation)
                         end
@@ -172,7 +171,7 @@ local function getMatchingPuyos(board)
                 if not (tableHasValue(checked,location)) then --if the location was checked already
                     --this puyo was not checked... check for other surrounding puyos
                     local chain = {} --new table, stores puyos in the chain to this one
-                    getPuyoChains(chain, x, y, board.puyos[location])
+                    getPuyoChains(board, chain, x, y, board.puyos[location])
                     
                     local length = 0
                     for k,v in pairs(chain) do
@@ -216,7 +215,7 @@ local function dropFloatingPuyos(board)
 end
 
 
-local function renderBoard(board, dropper)
+local function renderBoard(board)
     term.setBackgroundColor(colors.black)
     term.clear()
     
@@ -242,22 +241,7 @@ local function renderBoard(board, dropper)
     end
     
     --render puyo dropper
-    if not (dropper.disabled) and (dropper.main ~= nil) then
-        local mainPuyo = puyoInfo[dropper.main]
-        local otherPuyo = puyoInfo[puyoDropper.other]
-            
-        local drawX = boardOffset.x + dropper.x
-        local drawY = boardOffset.y + dropper.y
-        
-        local xRotOffset, yRotOffset = dropperGetRotOffset(dropper)
-        if (term.isColor()) then
-            paintutils.drawPixel(drawX, drawY, mainPuyo.color)
-            paintutils.drawPixel(drawX + xRotOffset, drawY + yRotOffset, otherPuyo.color) 
-        else
-            drawStringAt(drawX, drawY, mainPuyo.symbol, colors.lightGray, colors.black)
-            drawStringAt(drawX+xRotOffset, drawY+yRotOffset, otherPuyo.symbol, colors.lightGray, colors.black)
-        end
-    end
+
     
     --render outline of the board
     paintutils.drawBox(boardOffset.x, boardOffset.y, boardOffset.x+boardWidth+1, 
@@ -308,24 +292,43 @@ local function renderBoard(board, dropper)
     end
 end
 
+local function renderDropper(dropper)
+    if not (dropper.disabled) and (dropper.main ~= nil) then
+        local mainPuyo = puyoInfo[dropper.main]
+        local otherPuyo = puyoInfo[dropper.other]
+            
+        local drawX = boardOffset.x + dropper.x
+        local drawY = boardOffset.y + dropper.y
+        
+        local xRotOffset, yRotOffset = dropperGetRotOffset(dropper)
+        if (term.isColor()) then
+            paintutils.drawPixel(drawX, drawY, mainPuyo.color)
+            paintutils.drawPixel(drawX + xRotOffset, drawY + yRotOffset, otherPuyo.color) 
+        else
+            drawStringAt(drawX, drawY, mainPuyo.symbol, colors.lightGray, colors.black)
+            drawStringAt(drawX+xRotOffset, drawY+yRotOffset, otherPuyo.symbol, colors.lightGray, colors.black)
+        end
+    end
+end
+
 local function queuePuyos()
     local new1, new2 = getRandomPuyoPair()
     table.insert(queuedPuyos, {["main"] = new1, ["other"] = new2})
     --TODO: send rednet message 
 end
 
-local function resetDropper()
+local function resetDropper(board)
     while (tableLength(queuedPuyos) < 2) do
         queuePuyos()
     end
     local pulled = queuedPuyos[1]
     
-    puyoDropper.main = pulled.main
-    puyoDropper.other = pulled.other
-    puyoDropper.x = 3
-    puyoDropper.y = 1
-    puyoDropper.rotation = 2
-    puyoDropper.disabled = true
+    board.dropper.main = pulled.main
+    board.dropper.other = pulled.other
+    board.dropper.x = 3
+    board.dropper.y = 1
+    board.dropper.rotation = 2
+    board.dropper.disabled = true
     
     table.remove(queuedPuyos,1)
 end
@@ -375,8 +378,10 @@ local function simulateBoard(board)
     while (continueDropping) do
         local matches = getMatchingPuyos(board)
         
-        for chain in ipairs(matched) do
+        print(table.concat(matches, ", "))
+        for chain in ipairs(matches) do
             local chainScore = 0
+            print(chain)
             for location in ipairs(chain) do
                 if (board.puyos[location] ~= "garbage") then
                     chainScore = chainScore + 10
@@ -388,7 +393,7 @@ local function simulateBoard(board)
             
         
         scoreMultiplier = scoreMultiplier + 1
-        continueDropping = dropFloatingPuyos()
+        continueDropping = dropFloatingPuyos(board)
     end
 end
     
@@ -396,15 +401,16 @@ end
 --the dropper landing on the main board
 local function onDropperLanding()
     local scoreMultiplier = 0
+    local drop = puyoBoard.dropper
     
-    puyoDropper.disabled = true
-    local x = puyoDropper.x
-    local y = puyoDropper.y
-    puyoBoard.puyos[x..";"..y] = puyoDropper.main
-    local xRot, yRot = dropperGetRotOffset(puyoDropper)
-    puyoBoard.puyos[(x+xRot)..";"..(y+yRot)] = puyoDropper.other
+    drop.disabled = true
+    local x = drop.x
+    local y = drop.y
+    puyoBoard.puyos[x..";"..y] = drop.main
+    local xRot, yRot = dropperGetRotOffset(drop)
+    puyoBoard.puyos[(x+xRot)..";"..(y+yRot)] = drop.other
     
-    resetDropper()
+    resetDropper(puyoBoard)
     simulateBoard(puyoBoard)
     dropGarbage(puyoBoard)
 end
@@ -413,7 +419,7 @@ end
 --check for keys will halt, hence why we have to use parallel.waitForAny
 local function thrd_checkForKeys()
     local event, key, held = os.pullEvent("key")
-    local keyMethod = puyoDropper.controls[key]
+    local keyMethod = puyoBoard.dropper.controls[key]
     
     if (key == keys.p) then
          if (isPaused) then
@@ -427,37 +433,41 @@ local function thrd_checkForKeys()
         return
     end
     
-    if (puyoDropper.disabled) then
+    if (puyoBoard.dropper.disabled) then
         sleep(100)
         return
     end
     if (keyMethod ~= nil) then
-        keyMethod(puyoDropper)
-        renderBoard()
+        keyMethod(puyoBoard.dropper)
+        renderBoard(puyoBoard)
+        renderDropper(puyoBoard.dropper)
     end
     sleep(100)
 end
 
 local function thrd_playGame()
-    if (puyoDropper.disabled) then
+    if (puyoBoard.dropper.disabled) then
         return 
     end
+    local drop = puyoBoard.dropper
+    
     dropperTimer = dropperTimer - 1
     if (dropperTimer <= 0) then
-        puyoDropper.y = puyoDropper.y + 1
-        if (dropperIntersectsBoard(puyoBoard, puyoDropper)) then
-             puyoDropper.y = puyoDropper.y - 1
+        drop.y = drop.y + 1
+        if (dropperIntersectsBoard(puyoBoard, drop)) then
+             drop.y = drop.y - 1
              landingTimer = landingTimer - 1
              if (landingTimer <= 0) then
                  onDropperLanding()
-                 puyoDropper.disabled = false
+                 drop.disabled = false
                  dropperTimer = gameSpeed
                  landingTimer = 10
              end
         else
             dropperTimer = gameSpeed
         end
-        renderBoard()
+        renderBoard(puyoBoard)
+        renderDropper(drop)
     end
     sleep(0.05)
 end
@@ -472,8 +482,8 @@ end
 local function playGame(singleplayer)
     gameover = false
     term.clear()
-    resetDropper()
-    puyoDropper.disabled = false
+    resetDropper(puyoBoard)
+    puyoBoard.dropper.disabled = false
     
     if not (singleplayer) then
         --connect or host server
@@ -500,8 +510,6 @@ local function playGame(singleplayer)
                 thrd_checkForKeys()
             end
         else
-            
-            
         end
     end
 end

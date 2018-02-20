@@ -428,12 +428,13 @@ local function thrd_checkForKeys()
     local event, key, held = os.pullEvent("key")
     local keyMethod = puyoBoard.dropper.controls[key]
     
-    if (key == keys.p) then
+    if (key == keys.p) and not (held) then
          if (isPaused) then
             isPaused = false 
          else
             isPaused = true
          end
+         return
     end
     
     if (isPaused) then

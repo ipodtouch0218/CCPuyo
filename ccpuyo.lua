@@ -480,6 +480,7 @@ local function playGame(singleplayer)
     term.clear()
     resetDropper(puyoBoard)
     puyoBoard.dropper.disabled = false
+    puyoBoard.puyos = {}
     renderBoard()
     
     if not (singleplayer) then

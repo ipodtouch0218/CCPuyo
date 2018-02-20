@@ -584,6 +584,7 @@ local function menuKeyListener()
 end
 
 local function openMenu()
+    drawMenu()
     while true do
         menuKeyListener()
         drawMenu()

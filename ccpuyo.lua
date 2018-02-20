@@ -301,7 +301,7 @@ local function renderDropper(dropper)
         local drawY = boardOffset.y + dropper.y
      
         if (dropper.lastLocs ~= nil) then
-            for loc in ipairs(dropper.lastLocs) do
+            for _,loc in pairs(dropper.lastLocs) do
                 paintutils.drawPixel(loc.x, loc.y, colors.black)
             end
         end

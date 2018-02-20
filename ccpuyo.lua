@@ -572,7 +572,7 @@ local function menuKeyListener()
         return
     elseif (key == keys.down) then
          selectedItem = selectedItem + 1
-         if (selctedItem > tableLength(menuItems)) then
+         if (selectedItem > tableLength(menuItems)) then
              selectedItem = tableLength(menuItems)
          end
     elseif (key == keys.up) then

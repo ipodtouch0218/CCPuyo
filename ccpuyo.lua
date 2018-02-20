@@ -299,6 +299,12 @@ local function renderDropper(dropper)
             
         local drawX = boardOffset.x + dropper.x
         local drawY = boardOffset.y + dropper.y
+     
+        if (dropper.lastLocs ~= nil) then
+            for loc in ipairs(dropper.lastLocs) do
+                paintutils.drawPixel(loc.x, loc.y, colors.black)
+            end
+        end
         
         local xRotOffset, yRotOffset = dropperGetRotOffset(dropper)
         if (term.isColor()) then
@@ -308,6 +314,8 @@ local function renderDropper(dropper)
             drawStringAt(drawX, drawY, mainPuyo.symbol, colors.lightGray, colors.black)
             drawStringAt(drawX+xRotOffset, drawY+yRotOffset, otherPuyo.symbol, colors.lightGray, colors.black)
         end
+        
+        dropper.lastLocs = {{["x"] = drawX, ["y"] = drawY}, {["x"] = drawX+xRotOffset, ["y"] = drawY+yRotOffset}}
     end
 end
 

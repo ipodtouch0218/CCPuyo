@@ -551,12 +551,6 @@ if (clientID == nil) then --todo: hosting shiz
 local menuItems = {{["name"] = "Play", ["function"] = playGame}, 
                    {["name"] = "Exit", ["function"] = shell.exit}}
 local selectedItem = "1"
-local function openMenu()
-    while true do
-        menuKeyListener()
-        drawMenu()
-    end
-end
 
 local function drawMenu() 
     term.clear()
@@ -588,6 +582,14 @@ local function menuKeyListener()
          end
     end
 end
+
+local function openMenu()
+    while true do
+        menuKeyListener()
+        drawMenu()
+    end
+end
+
 --------START MAIN GAME FUNCTION CALLS--------
 --playGame(true)
 openMenu()

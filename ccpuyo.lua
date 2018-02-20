@@ -431,6 +431,7 @@ local function thrd_checkForKeys()
     if (key == keys.p) and not (held) then
          if (isPaused) then
             isPaused = false 
+            renderBoard(puyoBoard)
          else
             isPaused = true
          end

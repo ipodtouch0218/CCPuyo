@@ -387,6 +387,8 @@ local function simulateBoard(board)
     local continueDropping = true
     
     while (continueDropping) do
+        renderBoard(puyoBoard)
+        sleep(0.2)
         local matches = getMatchingPuyos(board)
         
         for _,chain in pairs(matches) do
@@ -398,6 +400,8 @@ local function simulateBoard(board)
                 board.puyos[location] = nil
             end
             board.score = board.score + (chainScore*scoreMultiplier)
+            renderBoard(puyoBoard)
+            sleep(0.2)
         end
         
         scoreMultiplier = scoreMultiplier + 1

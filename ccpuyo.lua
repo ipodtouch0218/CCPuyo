@@ -317,6 +317,9 @@ local function renderDropper(dropper)
         
         dropper.lastLocs = {{["x"] = drawX, ["y"] = drawY}, {["x"] = drawX+xRotOffset, ["y"] = drawY+yRotOffset}}
     end
+    
+    paintutils.drawBox(boardOffset.x, boardOffset.y, boardOffset.x+boardWidth+1, 
+    boardOffset.y+boardHeight+1, colors.white)
 end
 
 local function queuePuyos()
@@ -432,6 +435,7 @@ local function thrd_checkForKeys()
          if (isPaused) then
             isPaused = false 
             renderBoard(puyoBoard)
+            renderDropper(puyoBoard.dropper)
          else
             isPaused = true
          end

@@ -400,6 +400,8 @@ local function simulateBoard(board)
         scoreMultiplier = scoreMultiplier + 1
         continueDropping = dropFloatingPuyos(board)
     end
+    
+    renderBoard(puyoBoard)
 end
     
     
@@ -472,7 +474,6 @@ local function thrd_playGame()
             dropperTimer = gameSpeed
         end
         renderDropper(drop)
-        renderBoard(puyoBoard)
     end
     sleep(0.05)
 end

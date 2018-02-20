@@ -364,7 +364,6 @@ local function dropGarbage(board)
     end
         
     dropFloatingPuyos(board)
-    renderBoard(board)
 end
 
 --board dropping puyos, making matches.
@@ -436,7 +435,7 @@ local function thrd_checkForKeys()
     end
     if (keyMethod ~= nil) then
         keyMethod(puyoBoard.dropper)
-        renderBoard(puyoBoard)
+        --renderBoard(puyoBoard)
         renderDropper(puyoBoard.dropper)
     end
     sleep(100)
@@ -481,6 +480,7 @@ local function playGame(singleplayer)
     term.clear()
     resetDropper(puyoBoard)
     puyoBoard.dropper.disabled = false
+    renderBoard()
     
     if not (singleplayer) then
         --connect or host server

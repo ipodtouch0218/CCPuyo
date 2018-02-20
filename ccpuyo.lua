@@ -10,6 +10,7 @@ local gameSpeed = (1.2)*20 --1.2 seconds between the puyo dropping and 20 tps
 local queuedPuyos = {}
 local isPaused = false
 local gameover = false
+local puyosDropped = 0
 
 --playing status variables
 local opponentBoard --board of the opponent
@@ -429,6 +430,7 @@ local function onDropperLanding()
     dropGarbage(puyoBoard)
 end
 
+
 --< MAIN PROGRAM LOOPS >--
 --check for keys will halt, hence why we have to use parallel.waitForAny
 local function thrd_checkForKeys()
@@ -495,16 +497,17 @@ local function thrd_receiveRednetMessages()
 end
 
 --singleplayer
-local function playGame(singleplayer)
+local function playGame()
+    puyosDropped = 0
     gameover = false
     term.clear()
     resetDropper(puyoBoard)
     puyoBoard.dropper.disabled = false
     renderBoard(puyoBoard)
     
-    if not (singleplayer) then
-        --connect or host server
-    end
+--    if not (singleplayer) then
+--        --connect or host server
+--    end
     
     while true do
         if (gameover) then 
@@ -544,5 +547,47 @@ if (clientID == nil) then --todo: hosting shiz
     rednet.host("puyo-puyo", "puyogame")
 ]]
 
+--< MENU SYSTEM >--
+local menuItems = {{["name"] = "Play", ["function"] = playGame}, 
+                   {["name"] = "Exit", ["function"] = shell.exit}}
+local selectedItem = "1"
+local function openMenu()
+    while true do
+        menuKeyListener()
+        drawMenu()
+    end
+end
+
+local function drawMenu() 
+    term.clear()
+    print("CCPuyo V0.1.0")
+    print()
+    for value,item in pairs(menuItems) do
+        if (selectedItem == value) then
+            print("> "..item.name.."")
+        else
+            print("  "..item.name)
+        end
+    end
+end
+
+local function menuKeyListener()
+    local event, key, held os.pullEvent("key")
+    if (key == keys.enter) then
+        menuItems[selectedItem]()
+        return
+    elseif (key == keys.down) then
+         selectedItem = selectedItem + 1
+         if (selctedItem > tableLength(menuItems)) then
+             selectedItem = tableLength(menuItems)
+         end
+    elseif (key == keys.up) then
+         selectedItem = selectedItem - 1
+         if (selectedItem < 1) then
+             selectedItem = 1
+         end
+    end
+end
 --------START MAIN GAME FUNCTION CALLS--------
-playGame(true)
+--playGame(true)
+openMenu()

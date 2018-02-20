@@ -223,7 +223,7 @@ local function renderBoard(board)
     for x=1,boardWidth do
         for y=1,boardHeight do
             local loc = x..";"..y
-           
+            
             if (board.puyos[loc] ~= nil) then
                 local info = puyoInfo[board.puyos[loc]]
                 if (term.isColor()) then
@@ -480,8 +480,7 @@ local function playGame(singleplayer)
     term.clear()
     resetDropper(puyoBoard)
     puyoBoard.dropper.disabled = false
-    puyoBoard.puyos = {}
-    renderBoard()
+    renderBoard(puyoBoard)
     
     if not (singleplayer) then
         --connect or host server

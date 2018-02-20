@@ -337,6 +337,7 @@ local function resetDropper(board)
     board.dropper.y = 1
     board.dropper.rotation = 2
     board.dropper.disabled = true
+    board.dropper.lastLocs = nil
     
     table.remove(queuedPuyos,1)
 end
@@ -470,8 +471,8 @@ local function thrd_playGame()
         else
             dropperTimer = gameSpeed
         end
-        renderBoard(puyoBoard)
         renderDropper(drop)
+        renderBoard(puyoBoard)
     end
     sleep(0.05)
 end

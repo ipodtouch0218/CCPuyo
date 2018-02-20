@@ -550,7 +550,7 @@ if (clientID == nil) then --todo: hosting shiz
 --< MENU SYSTEM >--
 local menuItems = {{["name"] = "Play", ["function"] = playGame}, 
                    {["name"] = "Exit", ["function"] = shell.exit}}
-local selectedItem = "1"
+local selectedItem = 1
 
 local function drawMenu() 
     term.clear()
@@ -566,7 +566,7 @@ local function drawMenu()
 end
 
 local function menuKeyListener()
-    local event, key, held os.pullEvent("key")
+    local event, key, held = os.pullEvent("key")
     if (key == keys.enter) then
         menuItems[selectedItem]()
         return

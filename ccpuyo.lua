@@ -19,7 +19,7 @@ local isMultiplayer = false --disallows pausing and displays the other board
 local protocolVersion = "1.0.0" --DO NOT CHANGE OR MULTIPLAYER WILL NOT WORK 
 
 --board variables
-local puyoBoard = {["puyos"] = {}, ["score"] = 0, ["garbage"] = 0, ["dropper"] = {}} --represents the puyo board, 6x12 by default.
+local puyoBoard = {} --represents the puyo board, 6x12 by default.
 local boardWidth = 6 
 local boardHeight = 12
 
@@ -92,10 +92,6 @@ end
 local function dropperQuickDrop(dropper)
     dropperTimer = 1
 end
-
-puyoBoard.dropper.controls = {[keys.right] = dropperMoveRight, 
-    [keys.left] = dropperMoveLeft, [keys.up] = dropperRotateRight,
-    [keys.down] = dropperQuickDrop}
 
 local localTime = 20
 
@@ -336,6 +332,8 @@ local function resetDropper(board)
     end
     local pulled = queuedPuyos[1]
     
+    if (board.dropper == nil) then board.dropper = {} end
+    
     board.dropper.main = pulled.main
     board.dropper.other = pulled.other
     board.dropper.x = 3
@@ -345,6 +343,23 @@ local function resetDropper(board)
     board.dropper.lastLocs = nil
     
     table.remove(queuedPuyos,1)
+end
+
+local function resetBoard(isPlayerBoard)
+    local board = {}
+    
+    board.dropper = {}
+    board.puyos = {}
+    board.garbage = 0
+    board.score = 0
+    
+    if (isPlayerBoard) then
+        board.dropper.controls = {[keys.right] = dropperMoveRight, 
+    [keys.left] = dropperMoveLeft, [keys.up] = dropperRotateRight,
+    [keys.down] = dropperQuickDrop}
+    end
+    
+    return board
 end
 
 local function sendGarbage(board, amount)
@@ -554,6 +569,7 @@ local function playGame()
     gameover = false
     term.clear()
     resetDropper(puyoBoard)
+    puyoBoard = resetBoard()
     puyoBoard.dropper.disabled = false
     renderBoard(puyoBoard)
     

@@ -12,10 +12,11 @@ local isPaused = false
 local gameover = false
 local puyosDropped = 0
 
---playing status variables
+--multiplayer status variables
 local opponentBoard --board of the opponent
 local clientID --id of the opponent
-local isMultiplayer = false --disallows
+local isMultiplayer = false --disallows pausing and displays the other board
+local protocolVersion = "1.0.0" --DO NOT CHANGE OR MULTIPLAYER WILL NOT WORK 
 
 --board variables
 local puyoBoard = {["puyos"] = {}, ["score"] = 0, ["garbage"] = 0, ["dropper"] = {}} --represents the puyo board, 6x12 by default.
@@ -346,6 +347,35 @@ local function resetDropper(board)
     table.remove(queuedPuyos,1)
 end
 
+local function sendGarbage(board, amount)
+    if (amount == 0) then
+        return
+    end
+    
+    if (board.garbage < amount) then
+        amount = amount - board.garbage
+        board.garbage = 0
+        
+        rednet.send(clientID, )
+        
+        --[[todo: 
+        if (isMultiplayer) then
+            local msg = {["message"] = "board.sendgarbage", ["amount"] = amount}
+        
+            rednet.send(clientID, textutils.serialize(msg))
+        end
+        ]]--
+    else -- >=
+        board.garbage = board.garbage - amount
+        
+        --[[
+        if (isMultiplayer) then
+            local msg = {["message"] = "board.setgarbage", ["amount"] = amount}
+        ]]--
+    end
+        
+end
+
 local function dropGarbage(board)
     if (board.garbage <= 0) then
         return
@@ -427,9 +457,22 @@ local function onDropperLanding()
     
     resetDropper(puyoBoard)
     simulateBoard(puyoBoard)
+    
+    sendGarbage()
     dropGarbage(puyoBoard)
+    
+    if (isMultiplayer) then
+        
+    end
+    
+    puyosDropped = puyosDropped + 1
 end
 
+--< REDNET MESSAGE HANDLER >--
+local messageTable = {
+    ["board.setpuyos"] = nil
+    ["board.simulate"] = nil
+    }
 
 --< MAIN PROGRAM LOOPS >--
 --check for keys will halt, hence why we have to use parallel.waitForAny
@@ -458,7 +501,6 @@ local function thrd_checkForKeys()
     end
     if (keyMethod ~= nil) then
         keyMethod(puyoBoard.dropper)
-        --renderBoard(puyoBoard)
         renderDropper(puyoBoard.dropper)
     end
     sleep(100)
@@ -479,6 +521,9 @@ local function thrd_playGame()
              if (landingTimer <= 0) then
                  onDropperLanding()
                  drop.disabled = false
+                 
+                 gameSpeed = math.max(0.2, math.min((-(1/40)*puyosDropped)+1.7, 1.2))
+                 
                  dropperTimer = gameSpeed
                  landingTimer = 10
              end
@@ -505,15 +550,12 @@ local function playGame()
     puyoBoard.dropper.disabled = false
     renderBoard(puyoBoard)
     
---    if not (singleplayer) then
---        --connect or host server
---    end
-    
     while true do
         if (gameover) then 
-            --gameEnd
-            return --stop the game if game is over.
-            --for now anyway
+            if (isMultiplayer) then
+                --send board.gameover message 
+            end
+            return
         end 
         
         if (isPaused) then
@@ -523,13 +565,12 @@ local function playGame()
             --also think about the portable
         end 
         
-        if (singleplayer) then
+        if not (isMultiplayer) then
             if not (isPaused) then
                 parallel.waitForAny(thrd_playGame, thrd_checkForKeys)
             else
                 thrd_checkForKeys()
             end
-        else
         end
     end
 end
@@ -548,7 +589,17 @@ if (clientID == nil) then --todo: hosting shiz
 ]]
 
 --< MENU SYSTEM >--
-local menuItems = {{["name"] = "Play", ["runfunction"] = playGame}, 
+local function playSingleplayer()
+    playGame()
+end
+local function playMultiplayer()
+    --display connecting menu
+    
+    --TODO: connecting stuff 
+end
+
+local menuItems = {{["name"] = "Play Singleplayer", ["runfunction"] = playSingleplayer},
+                   {["name"] = "Play Multiplayer", ["runfunction"] = playMultiplayer}, 
                    {["name"] = "Exit", ["runfunction"] = shell.exit}}
 local selectedItem = 1
 

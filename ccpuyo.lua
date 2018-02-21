@@ -356,7 +356,7 @@ local function sendGarbage(board, amount)
         amount = amount - board.garbage
         board.garbage = 0
         
-        rednet.send(clientID, )
+        --rednet.send(clientID, )
         
         --[[todo: 
         if (isMultiplayer) then
@@ -374,6 +374,7 @@ local function sendGarbage(board, amount)
         ]]--
     end
         
+    puyoBoard.garbage = amount
 end
 
 local function dropGarbage(board)
@@ -445,6 +446,7 @@ end
     
 --the dropper landing on the main board
 local function onDropperLanding()
+    local prevScore = puyoBoard.score
     local scoreMultiplier = 0
     local drop = puyoBoard.dropper
     
@@ -458,7 +460,7 @@ local function onDropperLanding()
     resetDropper(puyoBoard)
     simulateBoard(puyoBoard)
     
-    sendGarbage()
+    sendGarbage(puyoBoard, (puyoBoard.score - prevScore)/40)
     dropGarbage(puyoBoard)
     
     if (isMultiplayer) then
@@ -466,13 +468,18 @@ local function onDropperLanding()
     end
     
     puyosDropped = puyosDropped + 1
+    
+    if (puyoBoard.puyos["3;1"] ~= nil) then
+        gameover = true
+        if (isMultiplayer) then
+        end
+    end
 end
 
 --< REDNET MESSAGE HANDLER >--
 local messageTable = {
-    ["board.setpuyos"] = nil
-    ["board.simulate"] = nil
-    }
+    ["board.setpuyos"] = nil,
+    ["board.simulate"] = nil}
 
 --< MAIN PROGRAM LOOPS >--
 --check for keys will halt, hence why we have to use parallel.waitForAny
@@ -522,7 +529,7 @@ local function thrd_playGame()
                  onDropperLanding()
                  drop.disabled = false
                  
-                 gameSpeed = math.max(0.2, math.min((-(1/40)*puyosDropped)+1.7, 1.2))
+                 gameSpeed = math.max(0.2, math.min((-(1/40)*puyosDropped)+1.7, 1.2))*20
                  
                  dropperTimer = gameSpeed
                  landingTimer = 10
@@ -592,6 +599,7 @@ if (clientID == nil) then --todo: hosting shiz
 local function playSingleplayer()
     playGame()
 end
+
 local function playMultiplayer()
     --display connecting menu
     
@@ -603,7 +611,9 @@ local menuItems = {{["name"] = "Play Singleplayer", ["runfunction"] = playSingle
                    {["name"] = "Exit", ["runfunction"] = shell.exit}}
 local selectedItem = 1
 
-local function drawMenu() 
+local function drawMenu()
+    term.setBackgroundColor(colors.black)
+    term.setTextColor(colors.white) 
     term.clear()
     print("CCPuyo V0.1.0")
     print()

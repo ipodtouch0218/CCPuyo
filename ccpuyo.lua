@@ -16,7 +16,7 @@ local puyosDropped = 0
 local opponentBoard --board of the opponent
 local clientID --id of the opponent
 local isMultiplayer = false --disallows pausing and displays the other board
-local protocolVersion = "1.0.0" --DO NOT CHANGE OR MULTIPLAYER WILL NOT WORK 
+local protocolVersion = "1a" --DO NOT CHANGE OR MULTIPLAYER WILL NOT WORK 
 
 --board variables
 local puyoBoard = {} --represents the puyo board, 6x12 by default.
@@ -110,6 +110,15 @@ local function drawStringAt(x,y,char,fg,bg)
     if (bg ~= nil) then term.setBackgroundColor(bg) end
     if (fg ~= nil) then term.setTextColor(fg) end
     print(char)
+end
+
+local function drawStringCentered(y,str,fg,bg,clearline)
+    local x = (term.getSize()-string.len(str))/2
+    if (bg ~= nil) then term.setBackgroundColor(bg) end
+    if (fg ~= nil) then term.setTextColor(fg) end
+    term.setCursorPos(x,y)
+    if (clearline) then term.clearLine() end
+    print(str)
 end
 
 local function tableLength(T)
@@ -388,8 +397,6 @@ local function sendGarbage(board, amount)
             local msg = {["message"] = "board.setgarbage", ["amount"] = amount}
         ]]--
     end
-        
-    puyoBoard.garbage = amount
 end
 
 local function dropGarbage(board)
@@ -476,10 +483,16 @@ local function onDropperLanding()
     simulateBoard(puyoBoard)
     
     sendGarbage(puyoBoard, (puyoBoard.score - prevScore)/40)
-    dropGarbage(puyoBoard)
     
     if (isMultiplayer) then
-        
+        dropGarbage(puyoBoard)
+        --TODO: send packets
+    else
+        if (puyoBoard.garbage.timer <= 0) then
+            dropGarbage(puyoBoard)
+            puyoBoard.garbagetimer = gameSpeed/10
+            puyoBoard.garbage = (1.2-gameSpeed/20)*2
+        end
     end
     
     puyosDropped = puyosDropped + 1
@@ -568,8 +581,8 @@ local function playGame()
     puyosDropped = 0
     gameover = false
     term.clear()
+    puyoBoard = resetBoard(true)
     resetDropper(puyoBoard)
-    puyoBoard = resetBoard()
     puyoBoard.dropper.disabled = false
     renderBoard(puyoBoard)
     
@@ -578,6 +591,7 @@ local function playGame()
             if (isMultiplayer) then
                 --send board.gameover message 
             end
+            term.clear()
             return
         end 
         
@@ -622,22 +636,20 @@ local function playMultiplayer()
     --TODO: connecting stuff 
 end
 
-local menuItems = {{["name"] = "Play Singleplayer", ["runfunction"] = playSingleplayer},
-                   {["name"] = "Play Multiplayer", ["runfunction"] = playMultiplayer}, 
-                   {["name"] = "Exit", ["runfunction"] = shell.exit}}
+local menuItems = {{["name"] = "Play Solo", ["color"] = colors.white, ["runfunction"] = playSingleplayer},
+                   {["name"] = "Play Online MP", ["color"] = colors.gray, ["runfunction"] = nil--[[playMultiplayer]]}, 
+                   {["name"] = "Exit", ["color"] = colors.red, ["runfunction"] = shell.exit}}
 local selectedItem = 1
 
 local function drawMenu()
-    term.setBackgroundColor(colors.black)
-    term.setTextColor(colors.white) 
-    term.clear()
-    print("CCPuyo V0.1.0")
-    print()
+    term.setTextColor(colors.white)
+    drawStringCentered(1,"CCPuyo - v1.0.0",colors.white,colors.black,true)
     for value,item in pairs(menuItems) do
+        local color = item.color 
         if (selectedItem == value) then
-            print("> "..item.name.."")
+            drawStringCentered(value*2+2,"> "..item.name.."  ",color,colors.black,true)
         else
-            print("  "..item.name)
+            drawStringCentered(value*2+2,"  "..item.name.."  ",color,colors.black,true)
         end
     end
 end
@@ -645,7 +657,9 @@ end
 local function menuKeyListener()
     local event, key, held = os.pullEvent("key")
     if (key == keys.enter) then
-        menuItems[selectedItem].runfunction()
+        if (menuItems[selectedItem].runfunction ~= nil) then
+            menuItems[selectedItem].runfunction()
+        end
         return
     elseif (key == keys.down) then
          selectedItem = selectedItem + 1
@@ -657,10 +671,13 @@ local function menuKeyListener()
          if (selectedItem < 1) then
              selectedItem = 1
          end
+         
     end
 end
 
 local function openMenu()
+    term.setBackgroundColor(colors.black)
+    term.clear()
     drawMenu()
     while true do
         menuKeyListener()

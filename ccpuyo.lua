@@ -584,6 +584,8 @@ local function playGame()
     puyoBoard = resetBoard(true)
     resetDropper(puyoBoard)
     puyoBoard.dropper.disabled = false
+    gameSpeed = 1.2*20
+    puyoBoard.garbagetimer = gameSpeed/10
     renderBoard(puyoBoard)
     
     while true do

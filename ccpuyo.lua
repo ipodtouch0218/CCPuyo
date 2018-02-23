@@ -141,19 +141,6 @@ end
 
 ----GAME FUNCTIONS----
 
----
-local function gameOver()
-    gameover = true
-end
-local function unpause()
-    isPaused = false 
-end
----
-local pausedMenuItems = {["Continue"] = {["runmethod"] = unpause},
-                         ["Quit to Menu"] = {["runmethod"] = gameOver}}
-local pausedSelected = 1
----
-
 local function getRandomPuyoPair()
     local mainPuyo = puyoTypes[math.random(1,5)]
     local otherPuyo = puyoTypes[math.random(1,5)]
@@ -502,7 +489,9 @@ local function onDropperLanding()
     resetDropper(puyoBoard)
     simulateBoard(puyoBoard)
     
-    sendGarbage(puyoBoard, ((puyoBoard.score - prevScore)-30)/10)
+    if (prevScore >= 30) then
+        sendGarbage(puyoBoard, ((puyoBoard.score - prevScore)-30)/10)
+    end
     
     if (isMultiplayer) then
         dropGarbage(puyoBoard)
@@ -528,10 +517,30 @@ local function onDropperLanding()
     renderBoard(puyoBoard)
 end
 
+---
+local function gameOver()
+    gameover = true
+end
+local function unpause()
+    term.setBackgroundColor(colors.black)
+    term.clear()
+    renderBoard(puyoBoard)
+    isPaused = false 
+end
+---
+local pausedMenuItems = {["Continue"] = {["runmethod"] = unpause},
+                         ["Quit to Menu"] = {["runmethod"] = gameOver}}
+local pausedSelected = 1
+---
+
 --< REDNET MESSAGE HANDLER >--
 local messageTable = {
     ["board.setpuyos"] = nil,
     ["board.simulate"] = nil}
+
+local function thrd_checkForRednet()
+    
+end
 
 
 --< OTHERS >---
@@ -540,8 +549,21 @@ local function renderPausedMenu()
     centerX = centerX/2
     centerY = centerY/2
     
-    paintutils.drawFilledBox(centerX-3,centerY-3,centerX+3,centerY+3,colors.lightGray)
-     
+    paintutils.drawFilledBox(centerX-4,centerY-3,centerX+3,centerY+3,colors.lightGray)
+    drawStringAt(centerX-3,centerY-3,"PAUSED",colors.black,colors.lightGray)
+    
+    local counter = 1
+    local counterOffset = -1
+    for k,v in pairs(pausedMenuItems) do
+        
+        if (counter == pausedSelected) then
+            drawStringCentered(centerY+(counterOffset*2),"> "..k.."  ",colors.black,colors.lightGray,false)
+        else
+            drawStringCentered(centerY+(counterOffset*2),k,colors.black,colors.lightGray,false)
+        end
+        counter = counter + 1
+        counterOffset = counterOffset + 1
+    end
 end
 --< MAIN PROGRAM LOOPS >--
 local function thrd_pausedCheckForKeys()
@@ -557,8 +579,11 @@ local function thrd_pausedCheckForKeys()
     elseif (key == keys.up) then
         pausedSelected = math.max(1,pausedSelected-1)
     elseif (key == keys.enter) then
+        term.clear()
         pausedMenuItems[pausedSelected].runmethod()
+        return
     end
+    renderPausedMenu()
 end
 
 local function thrd_checkForKeys()
@@ -654,7 +679,8 @@ local function playGame()
         
         if (isPaused) then
             local xSiz, ySiz = term.getSize()
-            drawStringAt((xSiz/2)-3, (ySiz)/2, "PAUSED", colors.white, colors.gray)
+            --drawStringAt((xSiz/2)-3, (ySiz)/2, "PAUSED", colors.white, colors.gray)
+            renderPausedMenu()
             --todo: change term.getSize to a 4th 
             --also think about the portable
         end 
@@ -663,8 +689,14 @@ local function playGame()
             if not (isPaused) then
                 parallel.waitForAny(thrd_playGame, thrd_checkForKeys)
             else
-                thrd_checkForKeys()
+                thrd_pausedCheckForKeys()
             end
+        else
+            if not(isPaused) then
+                parallel.waitForAny(thrd_playGame, thrd_checkForKeys, thrd_checkForRednet)
+            else
+                parallel.waitForAny(thrd_playGame, thrd_pausedCheckForKeys, thrd_checkForRednet)
+            end 
         end
     end
 end

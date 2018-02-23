@@ -11,6 +11,7 @@ local queuedPuyos = {}
 local isPaused = false
 local gameover = false
 local puyosDropped = 0
+local exitgame = false
 
 --multiplayer status variables
 local opponentBoard --board of the opponent
@@ -298,7 +299,7 @@ local function renderBoard(board)
     
     --render garbage timer
     if not (isMultiplayer) then
-        drawStringAt(boardOffset.x+boardWidth+2,boardOffset.y+10,tostring(puyoBoard.garbagetimer),colors.white,colors.black)
+        drawStringAt(boardOffset.x+boardWidth+2,boardOffset.y+10,tostring(math.ciel(puyoBoard.garbagetimer)),colors.white,colors.black)
     end
 end
 
@@ -603,6 +604,7 @@ local function playGame()
             if (isMultiplayer) then
                 --send board.gameover message 
             end
+            term.setBackgroundColor(colors.black)
             term.clear()
             return
         end 

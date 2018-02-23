@@ -643,16 +643,17 @@ if (clientID == nil) then --todo: hosting shiz
 local function playSingleplayer()
     playGame()
 end
-
 local function playMultiplayer()
-    --display connecting menu
-    
+    --display connecting menu 
     --TODO: connecting stuff 
+end
+local function exitGame()
+    exitgame = true
 end
 
 local menuItems = {{["name"] = "Play Solo", ["color"] = colors.white, ["runfunction"] = playSingleplayer},
                    {["name"] = "Play Online MP", ["color"] = colors.lightGray, ["runfunction"] = nil--[[playMultiplayer]]}, 
-                   {["name"] = "Exit", ["color"] = colors.red, ["runfunction"] = shell.exit}}
+                   {["name"] = "Exit", ["color"] = colors.red, ["runfunction"] = exitGame}}
 local selectedItem = 1
 
 local function drawMenu()
@@ -694,6 +695,9 @@ local function openMenu()
     term.clear()
     drawMenu()
     while true do
+        if (exitgame) then
+            return
+        end
         menuKeyListener()
         drawMenu()
     end

@@ -8,10 +8,12 @@ local puyoInfo = {["blue"] = {["color"] = colors.blue, ["symbol"] = "B"},
                   ["garbage"] = {["color"] = colors.lightGray, ["symbol"] = "."}}
 local gameSpeed = (1.2)*20 --1.2 seconds between the puyo dropping and 20 tps
 local queuedPuyos = {}
-local isPaused = false
 local gameover = false
 local puyosDropped = 0
 local exitgame = false
+
+--pausing
+local isPaused = false
 
 --multiplayer status variables
 local opponentBoard --board of the opponent
@@ -138,6 +140,20 @@ local function tableHasValue(tab, val)
 end
 
 ----GAME FUNCTIONS----
+
+---
+local function gameOver()
+    gameover = true
+end
+local function unpause()
+    isPaused = false 
+end
+---
+local pausedMenuItems = {["Continue"] = {["runmethod"] = unpause},
+                         ["Quit to Menu"] = {["runmethod"] = gameOver}}
+local pausedSelected = 1
+---
+
 local function getRandomPuyoPair()
     local mainPuyo = puyoTypes[math.random(1,5)]
     local otherPuyo = puyoTypes[math.random(1,5)]
@@ -283,10 +299,10 @@ local function renderBoard(board)
         local garbageString = ""
         
         while (tempGarbage > 0) do
-            if (tempGarbage > boardWidth*5) then
+            if (tempGarbage >= boardWidth*5) then
                 garbageString = garbageString.."O"
                 tempGarbage = tempGarbage - (boardWidth*5)
-            elseif (tempGarbage > boardWidth) then
+            elseif (tempGarbage >= boardWidth) then
                 garbageString = "o"..garbageString
                 tempGarbage = tempGarbage - (boardWidth)
             else
@@ -298,8 +314,8 @@ local function renderBoard(board)
     end
     
     --render garbage timer
-    if not (isMultiplayer) then
-        drawStringAt(boardOffset.x+boardWidth+2,boardOffset.y+10,tostring(math.ciel(puyoBoard.garbagetimer)),colors.white,colors.black)
+    if not (isMultiplayer) and (puyoBoard.garbagetimer ~= nil) then
+        drawStringAt(boardOffset.x+boardWidth+2,boardOffset.y+10,tostring(math.ceil(puyoBoard.garbagetimer)),colors.white,colors.black)
     end
 end
 
@@ -408,7 +424,7 @@ local function dropGarbage(board)
         return
     end
     
-    if (board.garbage > (boardWidth)) then
+    if (board.garbage >= boardWidth) then
         local counter = 0
         while (board.garbage > (boardWidth)) and (counter < 5) do
             counter = counter + 1 
@@ -425,7 +441,7 @@ local function dropGarbage(board)
         for _=1,boardWidth-board.garbage do
             table.remove(possibleLocs, math.random(tableLength(possibleLocs)))
         end
-        for x in ipairs(possibleLocs) do
+        for k,x in pairs(possibleLocs) do
             if (board.puyos[x..";1"] == nil) then
                 board.puyos[x..";1"] = "garbage"
                 board.garbage = board.garbage - 1
@@ -486,7 +502,7 @@ local function onDropperLanding()
     resetDropper(puyoBoard)
     simulateBoard(puyoBoard)
     
-    sendGarbage(puyoBoard, (puyoBoard.score - prevScore)/40)
+    sendGarbage(puyoBoard, ((puyoBoard.score - prevScore)-30)/10)
     
     if (isMultiplayer) then
         dropGarbage(puyoBoard)
@@ -517,8 +533,34 @@ local messageTable = {
     ["board.setpuyos"] = nil,
     ["board.simulate"] = nil}
 
+
+--< OTHERS >---
+local function renderPausedMenu()
+    local centerX,centerY = term.getSize()
+    centerX = centerX/2
+    centerY = centerY/2
+    
+    paintutils.drawFilledBox(centerX-3,centerY-3,centerX+3,centerY+3,colors.lightGray)
+     
+end
 --< MAIN PROGRAM LOOPS >--
---check for keys will halt, hence why we have to use parallel.waitForAny
+local function thrd_pausedCheckForKeys()
+    local event, key, held = os.pullEvent("key")
+    
+    if (key == keys.p) and not (held) then
+        unpause()
+        return
+    end
+    
+    if (key == keys.down) then
+        pausedSelected = math.min(pausedSelected+1,tableLength(pausedMenuItems)) 
+    elseif (key == keys.up) then
+        pausedSelected = math.max(1,pausedSelected-1)
+    elseif (key == keys.enter) then
+        pausedMenuItems[pausedSelected].runmethod()
+    end
+end
+
 local function thrd_checkForKeys()
     local event, key, held = os.pullEvent("key")
     local keyMethod = puyoBoard.dropper.controls[key]

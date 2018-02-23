@@ -204,8 +204,8 @@ local function dropFloatingPuyos(board)
     local returnval = false --if any puyo fell: return true
     for x=1,boardWidth do
         local supportedBy = boardHeight+1
-        for yTmp=0,boardHeight do --why 0? so if you stack one above the top it doesnt disappear
-            local y = (boardHeight+1)-yTmp 
+        for yTmp=0,boardHeight do 
+            local y = (boardHeight)-yTmp 
             local stringLoc = x..";"..y
             
             if (board.puyos[stringLoc] ~= nil) then
@@ -247,8 +247,6 @@ local function renderBoard(board)
         end
     end
     
-    --render puyo dropper
-
     
     --render outline of the board
     paintutils.drawBox(boardOffset.x, boardOffset.y, boardOffset.x+boardWidth+1, 
@@ -296,6 +294,11 @@ local function renderBoard(board)
             end
         end
         drawStringAt(boardOffset.x,boardOffset.y-1,garbageString,colors.lightGray,colors.black)
+    end
+    
+    --render garbage timer
+    if not (isMultiplayer) then
+        drawStringAt(boardOffset.x+boardWidth+2,boardOffset.y+10,tostring(puyoBoard.garbagetimer),colors.white,colors.black)
     end
 end
 
@@ -488,10 +491,11 @@ local function onDropperLanding()
         dropGarbage(puyoBoard)
         --TODO: send packets
     else
-        if (puyoBoard.garbage.timer <= 0) then
+        puyoBoard.garbagetimer = puyoBoard.garbagetimer - 1
+        if (puyoBoard.garbagetimer <= 0) then
             dropGarbage(puyoBoard)
-            puyoBoard.garbagetimer = gameSpeed/10
-            puyoBoard.garbage = (1.2-gameSpeed/20)*2
+            puyoBoard.garbagetimer = gameSpeed
+            puyoBoard.garbage = (1.4-(gameSpeed/20))*2
         end
     end
     
@@ -502,6 +506,8 @@ local function onDropperLanding()
         if (isMultiplayer) then
         end
     end
+    
+    renderBoard(puyoBoard)
 end
 
 --< REDNET MESSAGE HANDLER >--
@@ -585,8 +591,12 @@ local function playGame()
     resetDropper(puyoBoard)
     puyoBoard.dropper.disabled = false
     gameSpeed = 1.2*20
-    puyoBoard.garbagetimer = gameSpeed/10
+    puyoBoard.garbagetimer = gameSpeed
     renderBoard(puyoBoard)
+    
+    if not (isMultiplayer) then
+        puyoBoard.garbage = (1.4-gameSpeed/20)*10
+    end
     
     while true do
         if (gameover) then 
@@ -639,7 +649,7 @@ local function playMultiplayer()
 end
 
 local menuItems = {{["name"] = "Play Solo", ["color"] = colors.white, ["runfunction"] = playSingleplayer},
-                   {["name"] = "Play Online MP", ["color"] = colors.gray, ["runfunction"] = nil--[[playMultiplayer]]}, 
+                   {["name"] = "Play Online MP", ["color"] = colors.lightGray, ["runfunction"] = nil--[[playMultiplayer]]}, 
                    {["name"] = "Exit", ["color"] = colors.red, ["runfunction"] = shell.exit}}
 local selectedItem = 1
 

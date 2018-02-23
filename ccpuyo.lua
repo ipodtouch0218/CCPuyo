@@ -492,12 +492,12 @@ local function onDropperLanding()
         dropGarbage(puyoBoard)
         --TODO: send packets
     else
-        puyoBoard.garbagetimer = puyoBoard.garbagetimer - 1
         if (puyoBoard.garbagetimer <= 0) then
             dropGarbage(puyoBoard)
-            puyoBoard.garbagetimer = gameSpeed
-            puyoBoard.garbage = (1.4-(gameSpeed/20))*2
+            puyoBoard.garbagetimer = math.max(gameSpeed,10)
+            puyoBoard.garbage = (1.4-(gameSpeed/20))*20
         end
+        puyoBoard.garbagetimer = puyoBoard.garbagetimer - 1
     end
     
     puyosDropped = puyosDropped + 1
@@ -505,6 +505,7 @@ local function onDropperLanding()
     if (puyoBoard.puyos["3;1"] ~= nil) then
         gameover = true
         if (isMultiplayer) then
+            
         end
     end
     
@@ -564,10 +565,10 @@ local function thrd_playGame()
                  onDropperLanding()
                  drop.disabled = false
                  
-                 gameSpeed = math.max(0.2, math.min((-(1/40)*puyosDropped)+1.7, 1.2))*20
+                 gameSpeed = math.max(0.2, math.min((-(1/80)*puyosDropped)+1.7, 1.2))*20
                  
                  dropperTimer = gameSpeed
-                 landingTimer = 10
+                 landingTimer = 5
              end
         else
             dropperTimer = gameSpeed
@@ -592,11 +593,11 @@ local function playGame()
     resetDropper(puyoBoard)
     puyoBoard.dropper.disabled = false
     gameSpeed = 1.2*20
-    puyoBoard.garbagetimer = gameSpeed
+    puyoBoard.garbagetimer = math.max(gameSpeed,14)
     renderBoard(puyoBoard)
     
     if not (isMultiplayer) then
-        puyoBoard.garbage = (1.4-gameSpeed/20)*10
+        puyoBoard.garbage = (1.4-gameSpeed/20)*20
     end
     
     while true do

@@ -624,25 +624,30 @@ local function thrd_playGame()
     end
     local drop = puyoBoard.dropper
     
-    dropperTimer = dropperTimer - 1
-    if (dropperTimer <= 0) then
-        drop.y = drop.y + 1
-        if (dropperIntersectsBoard(puyoBoard, drop)) then
-             drop.y = drop.y - 1
-             landingTimer = landingTimer - 1
-             if (landingTimer <= 0) then
-                 onDropperLanding()
-                 drop.disabled = false
-                 
-                 gameSpeed = math.max(0.2, math.min((-(1/80)*puyosDropped)+1.7, 1.2))*20
-                 
-                 dropperTimer = gameSpeed
-                 landingTimer = 5
-             end
-        else
+    drop.y = drop.y + 1
+    local aboutToLand = dropperIntersectsBoard(puyoBoard, drop)
+    drop.y = drop.y - 1
+    
+    if (aboutToLand) then
+        
+        landingTimer = landingTimer - 1
+        if (landingTimer <= 0) then
+            onDropperLanding()
+            drop.disabled = false
+            
+            gameSpeed = math.max(0.2, math.min((-(1/80)*puyosDropped)+1.7,1.2))*20
             dropperTimer = gameSpeed
+            landingTimer = gameSpeed
+            
         end
-        renderDropper(drop)
+    else 
+        dropperTimer = dropperTimer - 1
+        if (dropperTimer <= 0) then
+            
+            drop.y = drop.y + 1
+            dropperTimer = gameSpeed
+            renderDropper(drop)
+        end
     end
     sleep(0.05)
 end

@@ -449,7 +449,7 @@ local function simulateBoard(board)
     
     while (continueDropping) do
         renderBoard(puyoBoard)
-        sleep(0.2)
+        sleep(0.4)
         local matches = getMatchingPuyos(board)
         
         for _,chain in pairs(matches) do
@@ -462,12 +462,13 @@ local function simulateBoard(board)
             end
             board.score = board.score + (chainScore*scoreMultiplier)
             renderBoard(puyoBoard)
-            sleep(0.2)
+            sleep(0.5)
         end
         
         scoreMultiplier = scoreMultiplier + 1
         continueDropping = dropFloatingPuyos(board)
     end
+    sleep(0.3)
     
     renderBoard(puyoBoard)
 end
@@ -550,7 +551,7 @@ local function renderPausedMenu()
     centerX = centerX/2
     centerY = centerY/2
     
-    paintutils.drawFilledBox(centerX-4,centerY-3,centerX+3,centerY+3,colors.lightGray)
+    paintutils.drawFilledBox(centerX-8,centerY-7,centerX+3,centerY+3,colors.lightGray)
     drawStringAt(centerX-3,centerY-3,"PAUSED",colors.black,colors.lightGray)
     
     local counter = 1

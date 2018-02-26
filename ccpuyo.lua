@@ -489,8 +489,9 @@ local function onDropperLanding()
     resetDropper(puyoBoard)
     simulateBoard(puyoBoard)
     
-    if (prevScore >= 30) then
-        sendGarbage(puyoBoard, ((puyoBoard.score - prevScore)-30)/10)
+    local scoreDiff = (puyoBoard.score - prevScore)
+    if (scoreDiff > 30) then
+        sendGarbage(puyoBoard, (scoreDiff-30)/10)
     end
     
     if (isMultiplayer) then
